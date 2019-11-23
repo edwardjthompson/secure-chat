@@ -166,7 +166,7 @@ def main():
                         public_key = public_key_file.read()
                         public_key.replace("\n", "").replace("\r", "")
                     print("PUBLIC KEY IS: " + public_key)
-                    LNP.send(connection, public_key, "ENCRYPTION") # send public key
+                    LNP.send(connection, public_key) # send public key
                     
                     time.sleep(1)
                     # recv symmetric key, store it for later use

@@ -67,7 +67,7 @@ def main():
     username = ''
     username_next = False
 
-    symmetric_key = 'symmetric_key'
+    symmetric_key = ''
 
     while server in inputs:
 
@@ -85,21 +85,27 @@ def main():
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
 
-                if code == "ENCRYPTION":
-                    print(msg) # This should be public key
-                    public_key = msg
-                    client_public_key_file = open("client_rsa_public.pem", "w")
-                    client_public_key_file.write(public_key)
-                    client_public_key_file.close()
-
-                    # encrpyt symmetric key with public key
-                    encrypted_symmetric_key = asymcrypt.encrypt_data(symmetric_key,'client_rsa_public.pem')
-                    print(encrypted_symmetric_key)
-                    # LNP.send(s, encrypted_symmetric_key, "ENCRYPTION")
-
                 if code == "MSG_CMPLT":
 
-                    if username_next:
+                    if symmetric_key != "symmetric_key":
+                        symmetric_key = "symmetric_key"
+                        print(msg) # This should be public key
+                        public_key = msg
+                        # Save public key into client .pem file
+                        client_public_key_file = open("client_rsa_public.pem", "w")
+                        client_public_key_file.write(public_key)
+                        client_public_key_file.close()
+
+                        # encrpyt symmetric key with public key
+                        encrypted_symmetric_key = asymcrypt.encrypt_data(symmetric_key,'client_rsa_public.pem')
+                        print("Encrypted sym key")
+                        print(encrypted_symmetric_key)
+                        decrypted_symmetric_key = asymcrypt.decrypt_data(encrypted_symmetric_key,'rsa_private.pem')
+                        print("Decrypted sym key")
+                        print(decrypted_symmetric_key)
+                        # LNP.send(s, encrypted_symmetric_key, "ENCRYPTION")
+
+                    elif username_next:
                         username_msg = msg
                         username = username_msg.split(' ')[1]
                         sys.stdout.write(username_msg + '\n')
