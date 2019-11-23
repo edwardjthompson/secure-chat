@@ -26,12 +26,15 @@ def LNP_code(code):
         return "Username is invalid. Enter username: ", "USERNAME-INVALID"
     if code == -7:
         return "\nConnection error. Disconnected from server.", "EXIT"
+    if code == -8:
+        return "Exchanging public/private key.", "ENCRYPTION"
 
 
 def send(s, msg, code=None):
     '''
     send a string. Code send command to client. Options are ["EXIT", ""]
     '''
+    # Need to encrypt every send now? Or just msg? Take in a key to encrypt with
     if code == "EXIT":
         s.send(struct.pack('>i', -1))
     elif code == "FULL":
@@ -98,7 +101,7 @@ def recv(s, msg_buffers, recv_len, msg_len):
 
         #Special codes are sent as negative numbers in the length field
         if length < 0:
-            msg, code = LNP_code(length)
+            msg, code = LNP_code(length) # Check what message code it is
             msg_buffers[s] = msg.encode('UTF-8')
             msg_len[s] = len(msg_buffers[s])
             return code

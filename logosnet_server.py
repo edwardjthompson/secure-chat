@@ -11,6 +11,8 @@ import queue
 import time
 import LNP
 
+import asymcrypt
+
 MAX_USR = 100
 TIMEOUT = 60
 
@@ -128,6 +130,8 @@ def main():
     msg_len = {}
     usernames = {}
 
+    symmetric_key = ''
+
     while inputs:
 
         #if 60 seconds are up no username yet, disconnect the client
@@ -156,8 +160,19 @@ def main():
                 connection.setblocking(0)
 
                 if n_users < MAX_USR:
+                    
+                    public_key = ''
+                    with open('rsa_public.pem', 'r') as public_key_file:
+                        public_key = public_key_file.read()
+                        public_key.replace("\n", "").replace("\r", "")
+                    print("PUBLIC KEY IS: " + public_key)
+                    LNP.send(connection, public_key, "ENCRYPTION") # send public key
+                    
+                    time.sleep(1)
+                    # recv symmetric key, store it for later use
+                    # msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len) # get back Symmetric key (but need to decrypt with private key)
 
-                    LNP.send(connection, '', "ACCEPT")
+                    LNP.send(connection, '', "ACCEPT") # Sends accept code and then client will print out message requesting username
 
                     #set up connnection variables
                     inputs.append(connection)
@@ -187,6 +202,9 @@ def main():
                 if msg_status == "MSG_CMPLT":
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
+
+                    # Check is symmetric key has been populated yet, if not then this message is encrypted symmetric key
+                    # Decrpyt with private key and then store it.
 
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))

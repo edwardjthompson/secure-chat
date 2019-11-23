@@ -11,6 +11,8 @@ import queue
 import sys
 import LNP
 
+import asymcrypt
+
 def get_args():
     '''
     Gets command line argumnets.
@@ -54,6 +56,9 @@ def main():
     recv_len = {}
     msg_len = {}
 
+    # Here do encryption stuff, client just connected to server
+    # code = LNP.recv(server, msg_buffer, recv_len, msg_len)
+
     inputs = [server, sys.stdin]
     outputs = [server]
     message_queue = queue.Queue()
@@ -61,6 +66,8 @@ def main():
     waiting_accept = True
     username = ''
     username_next = False
+
+    symmetric_key = 'symmetric_key'
 
     while server in inputs:
 
@@ -77,6 +84,18 @@ def main():
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
+
+                if code == "ENCRYPTION":
+                    print(msg) # This should be public key
+                    public_key = msg
+                    client_public_key_file = open("client_rsa_public.pem", "w")
+                    client_public_key_file.write(public_key)
+                    client_public_key_file.close()
+
+                    # encrpyt symmetric key with public key
+                    encrypted_symmetric_key = asymcrypt.encrypt_data(symmetric_key,'client_rsa_public.pem')
+                    print(encrypted_symmetric_key)
+                    # LNP.send(s, encrypted_symmetric_key, "ENCRYPTION")
 
                 if code == "MSG_CMPLT":
 
