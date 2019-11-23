@@ -12,6 +12,8 @@ import time
 import LNP
 
 import asymcrypt
+from cryptography.fernet import Fernet
+import base64
 
 MAX_USR = 100
 TIMEOUT = 60
@@ -129,8 +131,9 @@ def main():
     recv_len = {}
     msg_len = {}
     usernames = {}
+    symmetric_keys = {}
 
-    symmetric_key = ''
+    #symmetric_key = ''
 
     while inputs:
 
@@ -205,12 +208,21 @@ def main():
 
                     # Check is symmetric key has been populated yet, if not then this message is encrypted symmetric key
                     # Decrpyt with private key and then store it.
+                    if s not in symmetric_keys:
+                        print(msg)
+                        msg = base64.b64decode(msg.encode())
+                        print(msg)
+                        encrypted_symmetric_key = msg
+                        
+                        symmetric_key = asymcrypt.decrypt_data(encrypted_symmetric_key,'rsa_private.pem')
+                        print(symmetric_key)
+                        symmetric_keys[s] = symmetric_key
 
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
 
 	         #Username exists for this client, this is a message
-                    if s in usernames:
+                    elif s in usernames:
                         pvt_user = is_private(msg, usernames)
                         msg = "> " + usernames[s] + ": " + msg
                         if pvt_user:

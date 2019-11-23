@@ -12,6 +12,8 @@ import sys
 import LNP
 
 import asymcrypt
+from cryptography.fernet import Fernet
+import base64
 
 def get_args():
     '''
@@ -87,8 +89,9 @@ def main():
 
                 if code == "MSG_CMPLT":
 
-                    if symmetric_key != "symmetric_key":
-                        symmetric_key = "symmetric_key"
+                    if symmetric_key == '':
+                        symmetric_key = Fernet.generate_key()
+                        print(symmetric_key)
                         print(msg) # This should be public key
                         public_key = msg
                         # Save public key into client .pem file
@@ -101,9 +104,23 @@ def main():
                         print("Encrypted sym key")
                         print(encrypted_symmetric_key)
                         decrypted_symmetric_key = asymcrypt.decrypt_data(encrypted_symmetric_key,'rsa_private.pem')
-                        print("Decrypted sym key")
+                        print("\nDecrypted sym key")
                         print(decrypted_symmetric_key)
-                        # LNP.send(s, encrypted_symmetric_key, "ENCRYPTION")
+
+                        f = Fernet(symmetric_key)
+                        encrypted = f.encrypt("yeet".encode())
+                        decrypted = f.decrypt(encrypted)
+                        print(decrypted.decode())
+
+                        print(base64.b64encode(encrypted_symmetric_key))
+
+                        overtheline = base64.b64encode(encrypted_symmetric_key).decode()
+                        print(overtheline)
+
+                        backback = base64.b64decode(overtheline.encode())
+                        print(backback)
+
+                        LNP.send(s, overtheline)
 
                     elif username_next:
                         username_msg = msg
