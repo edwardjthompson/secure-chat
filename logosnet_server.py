@@ -11,8 +11,21 @@ import queue
 import time
 import LNP
 
+from subprocess import check_output
+import os
+
 MAX_USR = 100
 TIMEOUT = 60
+
+#Not needed, but useful if needing to make keys
+def makeCAkeys():
+    #openssl genrsa -out ca-key-private.pem 2048
+    check_output(["openssl", "genrsa", "-out", "ca-key-private.pem", "2048"])
+
+    #openssl rsa -in ca-key-private.pem -pubout -out ca-key-public.pem
+    check_output(["openssl", "rsa", "-in", "ca-key-private.pem", "-pubout",
+     "-out", "ca-key-public.pem"])
+    
 
 
 def is_username(name, usernames):
@@ -25,6 +38,8 @@ def is_username(name, usernames):
     for s in usernames:
         if name == usernames[s]:
             return "USERNAME-TAKEN"
+
+    print (verify(name))
 
     return "USERNAME-ACCEPT"
 
@@ -99,6 +114,24 @@ def get_args():
     )
 
     return parser.parse_args()
+
+def verify(name):
+    txt = name + ".txt"
+    cert = name + ".cert"
+
+    if not os.path.exists(txt) or not os.path.exists(cert):
+        return False
+
+    # runs openssl in shell and sets msg to its output
+    msg = check_output(["openssl", "dgst", "-sha256", "-verify",
+     "ca-key-public.pem", "-signature", cert, txt]).decode("utf-8")
+
+    print(msg)
+
+    if msg == "Verified OK\n":
+        return True
+    else:
+        return False
 
 
 def main():

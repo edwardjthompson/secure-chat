@@ -11,6 +11,9 @@ import queue
 import sys
 import LNP
 
+import os.path
+from subprocess import check_output
+
 def get_args():
     '''
     Gets command line argumnets.
@@ -37,6 +40,21 @@ def get_args():
 
     return parser.parse_args()
 
+def sign(name):
+    name = name.strip('\n')
+    txt = name + ".txt"
+    cert = name + ".cert"
+
+    #make cert file for any user
+    f = open(txt, "w+")
+    f.write(name + "\n")
+    f.close()
+
+    msg = check_output(["openssl", "dgst", "-sha256", "-sign", "ca-key-private.pem",
+     "-out", cert, txt]).decode("utf-8")
+
+    # print(msg)
+
 #Main method
 def main():
     '''
@@ -61,6 +79,7 @@ def main():
     waiting_accept = True
     username = ''
     username_next = False
+    need_to_sign = False
 
     while server in inputs:
 
@@ -74,6 +93,7 @@ def main():
             if s == server:
 
                 code = LNP.recv(s, msg_buffer, recv_len, msg_len)
+                print(code)
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
@@ -104,6 +124,8 @@ def main():
                     waiting_accept = False
                     sys.stdout.write(msg)
                     sys.stdout.flush()
+                    # Here is where the server wants the username
+                    need_to_sign = True
 
                 elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN":
                     sys.stdout.write(msg)
@@ -125,6 +147,11 @@ def main():
             else:
 
                 msg = sys.stdin.readline()
+
+                if need_to_sign:
+                    print(msg)
+                    sign(msg)
+                    sys.stdout.flush()
 
                 if not waiting_accept:
                     msg = msg.rstrip()
