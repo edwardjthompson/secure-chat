@@ -6,6 +6,8 @@ import struct
 import sys
 import socket
 
+from cryptography.fernet import Fernet
+import base64
 
 def LNP_code(code):
     '''
@@ -30,7 +32,7 @@ def LNP_code(code):
         return "Exchanging public/private key.", "ENCRYPTION"
 
 
-def send(s, msg, code=None):
+def send(s, msg, code=None, symmetric_key=''):
     '''
     send a string. Code send command to client. Options are ["EXIT", ""]
     '''
@@ -50,11 +52,27 @@ def send(s, msg, code=None):
 
     else: #no code, normal message
         utf_str = msg.encode('UTF-8')
+        if symmetric_key != '':
+            f = Fernet(symmetric_key)
+            print(utf_str)
+            utf_str = f.encrypt(utf_str)
+            print(utf_str)
+
         str_size = sys.getsizeof(utf_str)
         if str_size % 2 != 0:
             utf_str += b'0'
+
         packed_msg = struct.pack('>i{}s'.format(len(msg)), len(msg), utf_str)
         s.send(packed_msg)
+        # if symmetric_key != None:
+        #     
+        #     #base64_msg = base64.b64encode(encrypted).encode('UTF-8')
+        #     #print(encrypted)
+        #     #print(base64_msg)
+        #     s.send(encrypted)
+        #     #s.send(packed_msg)
+        # else:    
+        #     s.send(packed_msg)
 
 
 def recv(s, msg_buffers, recv_len, msg_len):
@@ -96,6 +114,10 @@ def recv(s, msg_buffers, recv_len, msg_len):
 
     #if msg_length recieved:
     if (s not in msg_len) and (recv_len[s] == 4):
+        #print("recv msg")
+        #print(msg_buffers[s])
+
+        #decrypted = f.msg_buffers[s]
 
         length = struct.unpack(">i", msg_buffers[s])[0]
 

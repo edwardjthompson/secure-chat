@@ -168,7 +168,7 @@ def main():
                     with open('rsa_public.pem', 'r') as public_key_file:
                         public_key = public_key_file.read()
                         public_key.replace("\n", "").replace("\r", "")
-                    print("PUBLIC KEY IS: " + public_key)
+                    #print("PUBLIC KEY IS: " + public_key)
                     LNP.send(connection, public_key) # send public key
                     
                     time.sleep(1)
@@ -206,12 +206,18 @@ def main():
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
 
+                    if s in symmetric_keys:
+                        print(msg.encode())
+                        f = Fernet(symmetric_keys[s])
+                        msg = f.decrypt(msg.encode())
+                        print(msg)
+
                     # Check is symmetric key has been populated yet, if not then this message is encrypted symmetric key
                     # Decrpyt with private key and then store it.
                     if s not in symmetric_keys:
-                        print(msg)
+                        #print(msg)
                         msg = base64.b64decode(msg.encode())
-                        print(msg)
+                        #print(msg)
                         encrypted_symmetric_key = msg
                         
                         symmetric_key = asymcrypt.decrypt_data(encrypted_symmetric_key,'rsa_private.pem')
@@ -295,7 +301,7 @@ def main():
                 if next_msg:
                     # if args.debug:
                     #     print("        sending " + next_msg + " to " + str(s.getpeername()))
-                    LNP.send(s, next_msg)
+                    LNP.send(s, next_msg, None, symmetric_keys[s])
 
 
         #Remove exceptional sockets from the server

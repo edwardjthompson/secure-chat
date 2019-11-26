@@ -87,12 +87,20 @@ def main():
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
 
+                #print(msg)
+
                 if code == "MSG_CMPLT":
+                    
+                    #print(msg)
+                    if symmetric_key != '':
+                        f = Fernet(symmetric_key)
+                        msg = f.decrypt(msg.encode())
+                        #print(msg)
 
                     if symmetric_key == '':
                         symmetric_key = Fernet.generate_key()
-                        print(symmetric_key)
-                        print(msg) # This should be public key
+                        #print(symmetric_key)
+                        #print(msg) # This should be public key
                         public_key = msg
                         # Save public key into client .pem file
                         client_public_key_file = open("client_rsa_public.pem", "w")
@@ -101,29 +109,30 @@ def main():
 
                         # encrpyt symmetric key with public key
                         encrypted_symmetric_key = asymcrypt.encrypt_data(symmetric_key,'client_rsa_public.pem')
-                        print("Encrypted sym key")
-                        print(encrypted_symmetric_key)
+                        #print("Encrypted sym key")
+                        #print(encrypted_symmetric_key)
                         decrypted_symmetric_key = asymcrypt.decrypt_data(encrypted_symmetric_key,'rsa_private.pem')
-                        print("\nDecrypted sym key")
-                        print(decrypted_symmetric_key)
+                        #print("\nDecrypted sym key")
+                        #print(decrypted_symmetric_key)
 
                         f = Fernet(symmetric_key)
                         encrypted = f.encrypt("yeet".encode())
                         decrypted = f.decrypt(encrypted)
-                        print(decrypted.decode())
+                        #print(decrypted.decode())
 
-                        print(base64.b64encode(encrypted_symmetric_key))
+                        #print(base64.b64encode(encrypted_symmetric_key))
 
                         overtheline = base64.b64encode(encrypted_symmetric_key).decode()
-                        print(overtheline)
+                        #print(overtheline)
 
                         backback = base64.b64decode(overtheline.encode())
-                        print(backback)
+                        #print(backback)
 
                         LNP.send(s, overtheline)
 
                     elif username_next:
                         username_msg = msg
+                        print(username_msg)
                         username = username_msg.split(' ')[1]
                         sys.stdout.write(username_msg + '\n')
                         sys.stdout.write("> " + username + ": ")
@@ -196,7 +205,7 @@ def main():
 
 	     #otherwise just send the messsage
                 else:
-                    LNP.send(s, msg)
+                    LNP.send(s, msg, None, symmetric_key)
 
         for s in exceptional:
             print("Disconnected: Server exception")
