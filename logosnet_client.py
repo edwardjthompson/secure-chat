@@ -69,6 +69,8 @@ def main():
     username = ''
     username_next = False
 
+    accepted_user = False
+
     symmetric_key = ''
     cipher = None
 
@@ -83,10 +85,15 @@ def main():
             ###
             if s == server:
 
-                if username != '':
+                code = ''
+
+                if accepted_user:
                     code = LNP.recv(s, msg_buffer, recv_len, msg_len, cipher)
                 else:
+                    print("SHOULDN'T BE HERE AFTER")
                     code = LNP.recv(s, msg_buffer, recv_len, msg_len, None)
+
+                print(code)
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
@@ -94,7 +101,7 @@ def main():
                 if code == "MSG_CMPLT":
 
                     if symmetric_key == '':
-                        print(msg) # This should be public key
+                        # print(msg) # This should be public key
                         public_key = msg
                         # Save public key into client .pem file
                         client_public_key_file = open("client_rsa_public.pem", "w")
@@ -104,7 +111,7 @@ def main():
                         
                         recipient_key = RSA.import_key(open("client_rsa_public.pem").read())
                         symmetric_key = get_random_bytes(16)
-                        print(symmetric_key)
+                        # print(symmetric_key)
 
                         # Encrypt the session key with the public RSA key
                         cipher_rsa = PKCS1_OAEP.new(recipient_key)
@@ -138,7 +145,7 @@ def main():
                         sys.stdout.flush()
 
                 elif code == "ACCEPT":
-                    print("got accept!!")
+                    # print("got accept!!")
                     waiting_accept = False
                     sys.stdout.write(msg)
                     sys.stdout.flush()
@@ -149,6 +156,7 @@ def main():
 
                 elif code == "USERNAME-ACCEPT":
                     username_next = True
+                    accepted_user = True
 
                 elif code == "NO_MSG" or code == "EXIT":
                     sys.stdout.write(msg + '\n')

@@ -166,16 +166,18 @@ def main():
 
                 if n_users < MAX_USR:
 
+                    #ciphers[s] = None
+
                     public_key = ''
                     with open('rsa_public.pem', 'r') as public_key_file:
                         public_key = public_key_file.read()
                         public_key.replace("\n", "").replace("\r", "")
-                    print("PUBLIC KEY IS: " + public_key)
+                    # print("PUBLIC KEY IS: " + public_key)
                     LNP.send(connection, public_key) # send public key
 
                     time.sleep(1)
 
-                    print("sent accept")
+                    # print("sent accept")
                     LNP.send(connection, '', "ACCEPT")
 
                     #set up connnection variables
@@ -202,10 +204,8 @@ def main():
             else:
 
                 msg_status = None
-                if ciphers:
-                    print("ok ciphers!")
+                if s in ciphers:
                     msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, ciphers[s])
-                    print("recved!!")
                 else:
                     msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, None)
 
@@ -215,13 +215,13 @@ def main():
 
                     if s not in symmetric_keys:
                         enc_session_key = base64.b64decode(msg.encode())
-                        print(msg)
+                        # print(msg)
                         
                         private_key = RSA.import_key(open("rsa_private.pem").read())
                         cipher_rsa = PKCS1_OAEP.new(private_key)
                         symmetric_key = cipher_rsa.decrypt(enc_session_key)
                         
-                        print(symmetric_key)
+                        # print(symmetric_key)
                         symmetric_keys[s] = symmetric_key
 
                         # make cipher and store it
@@ -229,18 +229,19 @@ def main():
                         cipher_server = ARC4.new(tempkey)
                         ciphers[s] = cipher_server
 
-                        # this doesn't work why??
+                        # this does work, make sure encrypter is different then decrypter
+                        # cipher_client = ARC4.new(tempkey)
                         # theyeet = "yeet".encode("utf-8")
                         # print(theyeet)
                         # testmsg = cipher_server.encrypt(theyeet)
                         # print(testmsg)
-                        # print(cipher_server.decrypt(testmsg))
+                        # print(cipher_client.decrypt(testmsg))
 
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
 
 	         #Username exists for this client, this is a message
-                    if s in usernames:
+                    elif s in usernames:
                         pvt_user = is_private(msg, usernames)
                         msg = "> " + usernames[s] + ": " + msg
                         if pvt_user:
@@ -250,6 +251,8 @@ def main():
 
 	         #no username yet, this message is a username
                     else:
+                        print("USERNAMEEEEEEEEEEEEEE")
+                        print(msg)
                         username_status = is_username(msg, usernames)
                         LNP.send(s, '', username_status)
 
@@ -311,8 +314,8 @@ def main():
                     next_msg = None
 
                 if next_msg:
-                    # if args.debug:
-                    #     print("        sending " + next_msg + " to " + str(s.getpeername()))
+                    if args.debug:
+                        print("        sending " + next_msg + " to " + str(s.getpeername()))
                     LNP.send(s, next_msg, None, ciphers[s])
 
 
