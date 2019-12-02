@@ -11,6 +11,11 @@ import queue
 import time
 import LNP
 
+import base64
+
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES, PKCS1_OAEP
+
 MAX_USR = 100
 TIMEOUT = 60
 
@@ -127,6 +132,7 @@ def main():
     recv_len = {}
     msg_len = {}
     usernames = {}
+    symmetric_keys = {}
 
     while inputs:
 
@@ -156,6 +162,15 @@ def main():
                 connection.setblocking(0)
 
                 if n_users < MAX_USR:
+
+                    public_key = ''
+                    with open('rsa_public.pem', 'r') as public_key_file:
+                        public_key = public_key_file.read()
+                        public_key.replace("\n", "").replace("\r", "")
+                    print("PUBLIC KEY IS: " + public_key)
+                    LNP.send(connection, public_key) # send public key
+
+                    time.sleep(1)
 
                     LNP.send(connection, '', "ACCEPT")
 
@@ -187,6 +202,17 @@ def main():
                 if msg_status == "MSG_CMPLT":
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
+
+                    if s not in symmetric_keys:
+                        enc_session_key = base64.b64decode(msg.encode())
+                        print(msg)
+                        
+                        private_key = RSA.import_key(open("rsa_private.pem").read())
+                        cipher_rsa = PKCS1_OAEP.new(private_key)
+                        symmetric_key = cipher_rsa.decrypt(enc_session_key)
+                        
+                        print(symmetric_key)
+                        symmetric_keys[s] = symmetric_key
 
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))

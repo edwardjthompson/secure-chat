@@ -11,6 +11,12 @@ import queue
 import sys
 import LNP
 
+import base64
+
+from Crypto.PublicKey import RSA
+from Crypto.Random import get_random_bytes
+from Crypto.Cipher import AES, PKCS1_OAEP
+
 def get_args():
     '''
     Gets command line argumnets.
@@ -62,6 +68,8 @@ def main():
     username = ''
     username_next = False
 
+    symmetric_key = ''
+
     while server in inputs:
 
         readable, writable, exceptional = select.select(inputs, outputs, inputs)
@@ -79,6 +87,27 @@ def main():
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
 
                 if code == "MSG_CMPLT":
+
+                    if symmetric_key == '':
+                        print(msg) # This should be public key
+                        public_key = msg
+                        # Save public key into client .pem file
+                        client_public_key_file = open("client_rsa_public.pem", "w")
+                        client_public_key_file.write(public_key)
+                        client_public_key_file.close()
+
+                        
+                        recipient_key = RSA.import_key(open("client_rsa_public.pem").read())
+                        symmetric_key = get_random_bytes(16)
+                        print(symmetric_key)
+
+                        # Encrypt the session key with the public RSA key
+                        cipher_rsa = PKCS1_OAEP.new(recipient_key)
+                        enc_symmetric_key = cipher_rsa.encrypt(symmetric_key)
+
+                        #Now symmetric key is set
+
+                        LNP.send(s, base64.b64encode(enc_symmetric_key).decode())
 
                     if username_next:
                         username_msg = msg
