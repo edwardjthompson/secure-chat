@@ -15,7 +15,8 @@ import base64
 
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Cipher import AES, PKCS1_OAEP, ARC4
+from Crypto.Hash import SHA
 
 def get_args():
     '''
@@ -69,6 +70,7 @@ def main():
     username_next = False
 
     symmetric_key = ''
+    cipher = None
 
     while server in inputs:
 
@@ -81,7 +83,10 @@ def main():
             ###
             if s == server:
 
-                code = LNP.recv(s, msg_buffer, recv_len, msg_len)
+                if username != '':
+                    code = LNP.recv(s, msg_buffer, recv_len, msg_len, cipher)
+                else:
+                    code = LNP.recv(s, msg_buffer, recv_len, msg_len, None)
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
@@ -105,10 +110,13 @@ def main():
                         cipher_rsa = PKCS1_OAEP.new(recipient_key)
                         enc_symmetric_key = cipher_rsa.encrypt(symmetric_key)
 
-                        #Now symmetric key is set
+                        tempkey = SHA.new(symmetric_key).digest()
+                        cipher = ARC4.new(tempkey)
 
+                        #Now symmetric key is set
                         LNP.send(s, base64.b64encode(enc_symmetric_key).decode())
 
+                    # Somewhere here check if private message and if so decrypt it.
                     if username_next:
                         username_msg = msg
                         username = username_msg.split(' ')[1]
@@ -130,6 +138,7 @@ def main():
                         sys.stdout.flush()
 
                 elif code == "ACCEPT":
+                    print("got accept!!")
                     waiting_accept = False
                     sys.stdout.write(msg)
                     sys.stdout.flush()
@@ -183,7 +192,7 @@ def main():
 
 	     #otherwise just send the messsage
                 else:
-                    LNP.send(s, msg)
+                    LNP.send(s, msg, None, cipher)
 
         for s in exceptional:
             print("Disconnected: Server exception")

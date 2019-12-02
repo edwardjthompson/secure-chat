@@ -6,6 +6,9 @@ import struct
 import sys
 import socket
 
+from Crypto.Cipher import ARC4
+
+# Make a global cipher_server won't work because different for each
 
 def LNP_code(code):
     '''
@@ -28,7 +31,7 @@ def LNP_code(code):
         return "\nConnection error. Disconnected from server.", "EXIT"
 
 
-def send(s, msg, code=None):
+def send(s, msg, code=None, cipher=None):
     '''
     send a string. Code send command to client. Options are ["EXIT", ""]
     '''
@@ -51,10 +54,13 @@ def send(s, msg, code=None):
         if str_size % 2 != 0:
             utf_str += b'0'
         packed_msg = struct.pack('>i{}s'.format(len(msg)), len(msg), utf_str)
+        if cipher:
+            print("lnp send cipherrrrr")
+            packed_msg = cipher.encrypt(packed_msg)
         s.send(packed_msg)
 
 
-def recv(s, msg_buffers, recv_len, msg_len):
+def recv(s, msg_buffers, recv_len, msg_len, cipher_decrypter):
     '''
     function to read a byte stream and output the payload as a string
     s is socket, other arguments are dictionaries with socket keys
@@ -68,6 +74,10 @@ def recv(s, msg_buffers, recv_len, msg_len):
 
     try:
         msg = s.recv(2)
+        if cipher_decrypter: # make sure none doesn't pass this maybe check cipher_decrypted != None
+            print("LNP RECV CIPHER_DECRYPTER")
+            msg = cipher_decrypter.decrypt(msg) # then return cipher decrypter??
+
 
     # except:
     #     msg, code = LNP_code(-7)

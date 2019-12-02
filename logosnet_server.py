@@ -14,7 +14,9 @@ import LNP
 import base64
 
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_OAEP
+from Crypto.Cipher import AES, PKCS1_OAEP, ARC4 
+from Crypto.Hash import SHA
+from Crypto.Random import get_random_bytes
 
 MAX_USR = 100
 TIMEOUT = 60
@@ -133,6 +135,7 @@ def main():
     msg_len = {}
     usernames = {}
     symmetric_keys = {}
+    ciphers = {}
 
     while inputs:
 
@@ -172,6 +175,7 @@ def main():
 
                     time.sleep(1)
 
+                    print("sent accept")
                     LNP.send(connection, '', "ACCEPT")
 
                     #set up connnection variables
@@ -197,7 +201,13 @@ def main():
 	 ###
             else:
 
-                msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len)
+                msg_status = None
+                if ciphers:
+                    print("ok ciphers!")
+                    msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, ciphers[s])
+                    print("recved!!")
+                else:
+                    msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, None)
 
                 if msg_status == "MSG_CMPLT":
 
@@ -213,6 +223,18 @@ def main():
                         
                         print(symmetric_key)
                         symmetric_keys[s] = symmetric_key
+
+                        # make cipher and store it
+                        tempkey = SHA.new(symmetric_key).digest()
+                        cipher_server = ARC4.new(tempkey)
+                        ciphers[s] = cipher_server
+
+                        # this doesn't work why??
+                        # theyeet = "yeet".encode("utf-8")
+                        # print(theyeet)
+                        # testmsg = cipher_server.encrypt(theyeet)
+                        # print(testmsg)
+                        # print(cipher_server.decrypt(testmsg))
 
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
@@ -291,7 +313,7 @@ def main():
                 if next_msg:
                     # if args.debug:
                     #     print("        sending " + next_msg + " to " + str(s.getpeername()))
-                    LNP.send(s, next_msg)
+                    LNP.send(s, next_msg, None, ciphers[s])
 
 
         #Remove exceptional sockets from the server
