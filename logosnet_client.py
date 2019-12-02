@@ -13,6 +13,8 @@ import LNP
 
 import os.path
 from subprocess import check_output
+import io
+import base64
 
 def get_args():
     '''
@@ -46,7 +48,7 @@ def sign(name):
     cert = name + ".cert"
 
     #make cert file for any user
-    f = open(txt, "w+")
+    f = open(txt, 'w+')
     f.write(name + "\n")
     f.close()
 
@@ -54,6 +56,24 @@ def sign(name):
      "-out", cert, txt]).decode("utf-8")
 
     # print(msg)
+
+def readCertFile(name):
+    # print("name: " + name)
+    name = name.strip('\n')
+    cert = name + ".cert"
+    with open(cert, 'rb') as certFile:
+        content = certFile.read()
+
+    encoded = base64.b64encode(content).decode()
+    # print(encoded)
+    # print()
+    
+    # print(content)
+    # print()
+
+    decoded = base64.b64decode(encoded)
+    # print(decoded)
+    return encoded
 
 #Main method
 def main():
@@ -80,6 +100,8 @@ def main():
     username = ''
     username_next = False
     need_to_sign = False
+
+    unverified_username = ''
 
     while server in inputs:
 
@@ -126,6 +148,13 @@ def main():
                     sys.stdout.flush()
                     # Here is where the server wants the username
                     need_to_sign = True
+                
+                elif code == "NEED-CERTIFICATE":
+                    #add cert file to msg_queue
+                    # print(username)
+                    cert = readCertFile(unverified_username)
+                    # print(cert)
+                    message_queue.put(cert)
 
                 elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN":
                     sys.stdout.write(msg)
@@ -149,7 +178,8 @@ def main():
                 msg = sys.stdin.readline()
 
                 if need_to_sign:
-                    print(msg)
+                    # print(msg)
+                    unverified_username = msg
                     sign(msg)
                     sys.stdout.flush()
 

@@ -13,6 +13,7 @@ import LNP
 
 from subprocess import check_output
 import os
+import base64
 
 MAX_USR = 100
 TIMEOUT = 60
@@ -28,7 +29,7 @@ def makeCAkeys():
     
 
 
-def is_username(name, usernames):
+def is_username(name, usernames, cert):
     '''
     Returns a string code with status of username
     '''
@@ -39,7 +40,10 @@ def is_username(name, usernames):
         if name == usernames[s]:
             return "USERNAME-TAKEN"
 
-    print (verify(name))
+    v = verify(name, cert)
+    
+    if not v:
+        return "NOT-CERTIFIED"
 
     return "USERNAME-ACCEPT"
 
@@ -115,16 +119,30 @@ def get_args():
 
     return parser.parse_args()
 
-def verify(name):
-    txt = name + ".txt"
-    cert = name + ".cert"
+def verify(name, cert):
+    txtFile = name + "_server.txt"
+    certFile = name + "_server.cert"
 
-    if not os.path.exists(txt) or not os.path.exists(cert):
-        return False
+    decoded = base64.b64decode(cert.encode())
+
+    print(decoded)
+
+    # if not os.path.exists(txtFile) or not os.path.exists(cert):
+    #     return False
+    t = open(txtFile, "w+")
+    t.write(name + "\n")
+    t.close
+
+    c = open(certFile, "wb+")
+    c.write(decoded)
+    c.close
+    print(txtFile)
+    print(certFile)
 
     # runs openssl in shell and sets msg to its output
     msg = check_output(["openssl", "dgst", "-sha256", "-verify",
-     "ca-key-public.pem", "-signature", cert, txt]).decode("utf-8")
+     "ca-key-public.pem", "-signature", "edward_server.cert", "edward_server.txt"]).decode("utf-8")
+    # return False
 
     print(msg)
 
@@ -160,6 +178,8 @@ def main():
     recv_len = {}
     msg_len = {}
     usernames = {}
+    certificates = {}
+    unverified_usernames = {}
 
     while inputs:
 
@@ -233,13 +253,24 @@ def main():
                         else:
                             broadcast_queue(msg, msg_queues, exclude=[s])
 
+                    elif s not in unverified_usernames:
+                        print(msg)
+                        unverified_usernames[s] = msg
+                        LNP.send(s, '', "NEED-CERTIFICATE")
+
+                    # elif s not in certificates:
+                    #     certificates[s] = msg
+
+
 	         #no username yet, this message is a username
                     else:
-                        username_status = is_username(msg, usernames)
+                        certificates[s] = msg
+                        username_status = is_username(unverified_usernames[s],
+                        usernames, msg)
                         LNP.send(s, '', username_status)
 
                         if username_status == "USERNAME-ACCEPT":
-                            usernames[s] = msg
+                            usernames[s] = unverified_usernames[s]
                             del user_connect_time[s]
                             msg_queues[s] = queue.Queue()
                             msg = "User " + usernames[s] + " has joined"

@@ -26,6 +26,8 @@ def LNP_code(code):
         return "Username is invalid. Enter username: ", "USERNAME-INVALID"
     if code == -7:
         return "\nConnection error. Disconnected from server.", "EXIT"
+    if code == -8:
+        return "", "NEED-CERTIFICATE"
 
 
 def send(s, msg, code=None):
@@ -44,6 +46,8 @@ def send(s, msg, code=None):
         s.send(struct.pack('>i', -5))
     elif code == "USERNAME-INVALID":
         s.send(struct.pack('>i', -6))
+    elif code == "NEED-CERTIFICATE":
+        s.send(struct.pack('>i', -8))
 
     else: #no code, normal message
         utf_str = msg.encode('UTF-8')
