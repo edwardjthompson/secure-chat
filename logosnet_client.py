@@ -61,8 +61,12 @@ def readCertFile(name):
     # print("name: " + name)
     name = name.strip('\n')
     cert = name + ".cert"
-    with open(cert, 'rb') as certFile:
-        content = certFile.read()
+    try:
+        with open(cert, 'rb') as certFile:
+            content = certFile.read()
+    except:
+        content = b''
+        
 
     encoded = base64.b64encode(content).decode()
     # print(encoded)
@@ -181,6 +185,7 @@ def main():
                     # print(msg)
                     unverified_username = msg
                     sign(msg)
+                    need_to_sign = False
                     sys.stdout.flush()
 
                 if not waiting_accept:

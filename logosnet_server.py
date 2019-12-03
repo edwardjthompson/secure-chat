@@ -11,21 +11,30 @@ import queue
 import time
 import LNP
 
-from subprocess import check_output
+# from subprocess import check_output
+import subprocess
 import os
 import base64
+
+import filecmp
+
+# import ssl
+# from OpenSSL import SSL
+
+# from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
+
 
 MAX_USR = 100
 TIMEOUT = 60
 
 #Not needed, but useful if needing to make keys
-def makeCAkeys():
-    #openssl genrsa -out ca-key-private.pem 2048
-    check_output(["openssl", "genrsa", "-out", "ca-key-private.pem", "2048"])
+# def makeCAkeys():
+#     #openssl genrsa -out ca-key-private.pem 2048
+#     check_output(["openssl", "genrsa", "-out", "ca-key-private.pem", "2048"])
 
-    #openssl rsa -in ca-key-private.pem -pubout -out ca-key-public.pem
-    check_output(["openssl", "rsa", "-in", "ca-key-private.pem", "-pubout",
-     "-out", "ca-key-public.pem"])
+#     #openssl rsa -in ca-key-private.pem -pubout -out ca-key-public.pem
+#     check_output(["openssl", "rsa", "-in", "ca-key-private.pem", "-pubout",
+#      "-out", "ca-key-public.pem"])
     
 
 
@@ -40,7 +49,7 @@ def is_username(name, usernames, cert):
         if name == usernames[s]:
             return "USERNAME-TAKEN"
 
-    v = verify(name, cert)
+    v = verifyUser(name, cert)
     
     if not v:
         return "NOT-CERTIFIED"
@@ -119,37 +128,81 @@ def get_args():
 
     return parser.parse_args()
 
-def verify(name, cert):
-    txtFile = name + "_server.txt"
-    certFile = name + "_server.cert"
+def verifyUser(name, cert):
+    # txtFile = name + "_server.txt"
+    # certFile = name + "_server.cert"
 
-    decoded = base64.b64decode(cert.encode())
+    # # txtFile = name + ".txt"
+    # # certFile = name + ".cert"
 
-    print(decoded)
+    decoded = base64.b64decode(cert)
 
-    # if not os.path.exists(txtFile) or not os.path.exists(cert):
-    #     return False
-    t = open(txtFile, "w+")
+    # # print(decoded)
+
+
+    # # if not os.path.exists(txtFile) or not os.path.exists(cert):
+    # #     return False
+    t = open(name + "_server.txt", "w+")
     t.write(name + "\n")
     t.close
 
-    c = open(certFile, "wb+")
+    c = open(name + "_.cert", "wb")
     c.write(decoded)
     c.close
-    print(txtFile)
-    print(certFile)
 
-    # runs openssl in shell and sets msg to its output
-    msg = check_output(["openssl", "dgst", "-sha256", "-verify",
-     "ca-key-public.pem", "-signature", "edward_server.cert", "edward_server.txt"]).decode("utf-8")
-    # return False
+    # # with open(certFile, 'wb') as f:
+    # #     f.write(decoded)
 
-    print(msg)
+    # # print(txtFile)
+    # # print(certFile)
+    # msg = "Not verified"
 
+    # # runs openssl in shell and sets msg to its output
+    # # msg = subprocess.check_output(["openssl", "dgst", "-sha256", "-verify",
+    # #  "ca-key-public.pem", "-signature", origCertFile, origTxtFile]).decode("utf-8")
+    try:
+        msg = subprocess.check_output(["openssl", "dgst", "-sha256", "-verify",
+        "ca-key-public.pem", "-signature", name + ".cert", name + ".txt"]).decode("utf-8")
+    except subprocess.CalledProcessError as e:
+        print("OPENSSL error:", e.output)
+        # return False
+
+    # msg = subprocess.check_output(["openssl", "dgst", "-sha256", "-sign", "ca-key-private.pem",
+    #  "-out", name + "_server.cert", name + ".txt"]).decode("utf-8")
+
+    # # v = filecmp.cmp(name + '_.cert', name + '_.cert')
+    # v = ""
+    # try:
+    #     v = subprocess.check_output(["cmp", name + '_.cert', name + '_server.cert'])
+    # except subprocess.CalledProcessError as e:
+    #     v = e.output
+    #     # print("cmp error:", e.output)
+    # print(msg)
+
+    # print(v)
     if msg == "Verified OK\n":
         return True
     else:
         return False
+    # with open(name + ".txt", 'rb') as f:
+    #     nameFile = f.read()
+
+    # with open(name + ".cert", 'rb') as f:
+    #     signature = f.read()
+
+    # with open("ca-key-public.pem", 'rb') as f:
+    #     publicKey = f.read()
+
+    # pkey = load_publickey(FILETYPE_PEM, publicKey)
+
+    # x509 = X509()
+    # x509.set_pubkey(pkey)
+
+    # try:
+    #     verify(x509, signature, nameFile, 'sha256')
+    #     return True
+    # except:
+    #     return False
 
 
 def main():
@@ -254,7 +307,6 @@ def main():
                             broadcast_queue(msg, msg_queues, exclude=[s])
 
                     elif s not in unverified_usernames:
-                        print(msg)
                         unverified_usernames[s] = msg
                         LNP.send(s, '', "NEED-CERTIFICATE")
 
