@@ -251,8 +251,8 @@ def main():
 
 	         #no username yet, this message is a username
                     else:
-                        print("USERNAMEEEEEEEEEEEEEE")
-                        print(msg)
+                        #print("USERNAMEEEEEEEEEEEEEE")
+                        #print(msg)
                         username_status = is_username(msg, usernames)
                         LNP.send(s, '', username_status)
 

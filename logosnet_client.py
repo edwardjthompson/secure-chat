@@ -90,10 +90,10 @@ def main():
                 if accepted_user:
                     code = LNP.recv(s, msg_buffer, recv_len, msg_len, cipher)
                 else:
-                    print("SHOULDN'T BE HERE AFTER")
+                    #print("SHOULDN'T BE HERE AFTER")
                     code = LNP.recv(s, msg_buffer, recv_len, msg_len, None)
 
-                print(code)
+                #print(code)
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
