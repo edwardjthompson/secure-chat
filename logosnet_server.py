@@ -11,16 +11,7 @@ import queue
 import time
 import LNP
 
-# from subprocess import check_output
-import subprocess
-import os
 import base64
-
-import filecmp
-
-# import ssl
-# from OpenSSL import SSL
-
 from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
 
 
