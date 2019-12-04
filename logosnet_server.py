@@ -18,17 +18,6 @@ from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
 MAX_USR = 100
 TIMEOUT = 60
 
-#Not needed, but useful if needing to make keys
-# def makeCAkeys():
-#     #openssl genrsa -out ca-key-private.pem 2048
-#     check_output(["openssl", "genrsa", "-out", "ca-key-private.pem", "2048"])
-
-#     #openssl rsa -in ca-key-private.pem -pubout -out ca-key-public.pem
-#     check_output(["openssl", "rsa", "-in", "ca-key-private.pem", "-pubout",
-#      "-out", "ca-key-public.pem"])
-    
-
-
 def is_username(name, usernames, cert):
     '''
     Returns a string code with status of username
