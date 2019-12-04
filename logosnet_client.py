@@ -58,14 +58,15 @@ def sign(name):
     # print(msg)
 
 def readCertFile(name):
-    # print("name: " + name)
+    print("name: " + name)
     name = name.strip('\n')
     cert = name + ".cert"
     try:
         with open(cert, 'rb') as certFile:
             content = certFile.read()
     except:
-        content = b''
+        content = b'....'
+    print(content)
         
 
     encoded = base64.b64encode(content).decode()
@@ -75,7 +76,7 @@ def readCertFile(name):
     # print(content)
     # print()
 
-    decoded = base64.b64decode(encoded)
+    # decoded = base64.b64decode(encoded)
     # print(decoded)
     return encoded
 
@@ -119,7 +120,7 @@ def main():
             if s == server:
 
                 code = LNP.recv(s, msg_buffer, recv_len, msg_len)
-                print(code)
+                # print(code)
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
@@ -154,13 +155,10 @@ def main():
                     need_to_sign = True
                 
                 elif code == "NEED-CERTIFICATE":
-                    #add cert file to msg_queue
-                    # print(username)
                     cert = readCertFile(unverified_username)
-                    # print(cert)
                     message_queue.put(cert)
 
-                elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN":
+                elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN" or code == "NOT-CERTIFIED":
                     sys.stdout.write(msg)
                     sys.stdout.flush()
 
@@ -184,7 +182,7 @@ def main():
                 if need_to_sign:
                     # print(msg)
                     unverified_username = msg
-                    sign(msg)
+                    # sign(msg)
                     need_to_sign = False
                     sys.stdout.flush()
 
