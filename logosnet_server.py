@@ -50,7 +50,6 @@ def is_username(name, usernames, cert):
             return "USERNAME-TAKEN"
 
     v = verifyUser(name, cert)
-    print(v)
     
     if not v:
         return "NOT-CERTIFIED"
@@ -130,12 +129,10 @@ def get_args():
     return parser.parse_args()
 
 def verifyUser(name, cert):
-    # with open(name + ".txt", 'rb') as f:
-    #     nameFile = f.read()
-
-    # with open(name + ".cert", 'rb') as f:
-    #     signature = f.read()
-
+    '''
+    Takes in the name and certificate and checks that the name matches
+    the signature using the public key
+    '''
     decoded = base64.b64decode(cert)
 
     with open("ca-key-public.pem", 'rb') as f:
@@ -146,8 +143,10 @@ def verifyUser(name, cert):
     x509 = X509()
     x509.set_pubkey(pkey)
 
+    data = str.encode(name + "\n")
+
     try:
-        verify(x509, decoded, name + "\n", 'sha256')
+        verify(x509, decoded, data, 'sha256')
         return True
     except:
         return False
@@ -219,16 +218,16 @@ def main():
                     n_users += 1
                     user_connect_time[connection] = time.time()
 
-                    if args.debug:
-                        print("        SERVER: new connection from " + str(client_addr))
+                    # if args.debug:
+                    #     print("        SERVER: new connection from " + str(client_addr))
 
                 else: #>100 users
                     LNP.send(connection, '', "FULL")
                     connection.close()
 
-                    if args.debug:
-                        print("        SERVER: connection from " +
-                              str(client_addr) + " refused, server full")
+                    # if args.debug:
+                    #     print("        SERVER: connection from " +
+                    #           str(client_addr) + " refused, server full")
 
 
 	 ###
@@ -241,7 +240,6 @@ def main():
                 if msg_status == "MSG_CMPLT":
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
-
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
 
@@ -280,6 +278,7 @@ def main():
                         else: #invalid username
                             user_connect_time[s] = time.time()
                             msg = None
+                            del unverified_usernames[s]
 
 
 	        ###
@@ -287,9 +286,9 @@ def main():
 	        ###
                 elif msg_status == "NO_MSG" or msg_status == "EXIT":
 
-                    if args.debug:
-                        print("        SERVER: " + msg_status +
-                              ": closing connection with " + str(s.getpeername()))
+                    # if args.debug:
+                    #     print("        SERVER: " + msg_status +
+                    #           ": closing connection with " + str(s.getpeername()))
 
                     outputs.remove(s)
                     inputs.remove(s)
@@ -335,8 +334,8 @@ def main():
         #Remove exceptional sockets from the server
         for s in exceptional:
 
-            if args.debug:
-                print("        SERVER: handling exceptional condition for " + str(s.getpeername()))
+            # if args.debug:
+            #     print("        SERVER: handling exceptional condition for " + str(s.getpeername()))
 
             inputs.remove(s)
 	 #if s in outputs:

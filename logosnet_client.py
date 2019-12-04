@@ -11,9 +11,6 @@ import queue
 import sys
 import LNP
 
-import os.path
-from subprocess import check_output
-import io
 import base64
 
 def get_args():
@@ -42,42 +39,21 @@ def get_args():
 
     return parser.parse_args()
 
-def sign(name):
-    name = name.strip('\n')
-    txt = name + ".txt"
-    cert = name + ".cert"
-
-    #make cert file for any user
-    f = open(txt, 'w+')
-    f.write(name + "\n")
-    f.close()
-
-    msg = check_output(["openssl", "dgst", "-sha256", "-sign", "ca-key-private.pem",
-     "-out", cert, txt]).decode("utf-8")
-
-    # print(msg)
-
 def readCertFile(name):
-    print("name: " + name)
+    '''
+    Attempts to read the users .cert file and encodes it for sending
+    Sends empty binary if the file does not exist
+    '''
     name = name.strip('\n')
     cert = name + ".cert"
     try:
         with open(cert, 'rb') as certFile:
             content = certFile.read()
     except:
-        content = b'....'
-    print(content)
-        
+        content = b'....' #needs to be a multiple of 4 for base64 encoding
 
     encoded = base64.b64encode(content).decode()
-    # print(encoded)
-    # print()
     
-    # print(content)
-    # print()
-
-    # decoded = base64.b64decode(encoded)
-    # print(decoded)
     return encoded
 
 #Main method
@@ -120,7 +96,7 @@ def main():
             if s == server:
 
                 code = LNP.recv(s, msg_buffer, recv_len, msg_len)
-                # print(code)
+                
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
@@ -151,16 +127,21 @@ def main():
                     waiting_accept = False
                     sys.stdout.write(msg)
                     sys.stdout.flush()
-                    # Here is where the server wants the username
                     need_to_sign = True
                 
                 elif code == "NEED-CERTIFICATE":
                     cert = readCertFile(unverified_username)
                     message_queue.put(cert)
 
-                elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN" or code == "NOT-CERTIFIED":
+                elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN":
                     sys.stdout.write(msg)
                     sys.stdout.flush()
+
+                elif code == "NOT-CERTIFIED":
+                    sys.stdout.write(msg)
+                    sys.stdout.flush()
+                    unverified_username = ''
+                    need_to_sign = True
 
                 elif code == "USERNAME-ACCEPT":
                     username_next = True
@@ -180,9 +161,7 @@ def main():
                 msg = sys.stdin.readline()
 
                 if need_to_sign:
-                    # print(msg)
                     unverified_username = msg
-                    # sign(msg)
                     need_to_sign = False
                     sys.stdout.flush()
 
