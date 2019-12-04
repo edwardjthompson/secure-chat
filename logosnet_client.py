@@ -41,13 +41,14 @@ def is_private(msg):
     '''
     isPrivate returns username of recipient if the msg is private and None otherwise
     '''
-    str1 = msg.split(' ')[0]
+    from_user = msg.split(' ')[1]
+    to_user = msg.split(' ')[2]
 
-    if str1[0] == '@':
+    if to_user == '@':
         user = str1[1:len(str1)]
-        return user
+        return from_user, user
 
-    return None
+    return None, None
 
 #Main method
 def main():
@@ -104,9 +105,10 @@ def main():
                     # Check if private message
                     # If it is check if have sym key, if yes then encrypt
                     # If no then must be getting key so get it and make sym key and then send back over the line
-                    pvt_user = is_private(msg)
-                    if pvt_user is not None:
+                    from_user, to_user = is_private(msg)
+                    if to_user is not None:
                         # then it is a private message
+
 
                     if username_next:
                         username_msg = msg
@@ -172,8 +174,7 @@ def main():
                             A = (sharedBase ** dh_client_secret) % sharedPrime
                             saved_messages[user] = msg # save message to be send later?
                             # send this to next client
-                            msg = '@ ' + A
-                            # LNP.send(s, msg) just put in queue to be sent
+                            msg = '@' + user + ' ' + A
 
                     # Check if message is private
                     # If private check if DH connection has been set up
