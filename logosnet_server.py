@@ -23,16 +23,6 @@ from Crypto.Random import get_random_bytes
 MAX_USR = 100
 TIMEOUT = 60
 
-#Not needed, but useful if needing to make keys
-# def makeCAkeys():
-#     #openssl genrsa -out ca-key-private.pem 2048
-#     check_output(["openssl", "genrsa", "-out", "ca-key-private.pem", "2048"])
-
-#     #openssl rsa -in ca-key-private.pem -pubout -out ca-key-public.pem
-#     check_output(["openssl", "rsa", "-in", "ca-key-private.pem", "-pubout",
-#      "-out", "ca-key-public.pem"])
-    
-
 
 def is_username(name, usernames, cert):
     '''
@@ -174,7 +164,6 @@ def main():
     recv_len = {}
     msg_len = {}
     usernames = {}
-    certificates = {}
     unverified_usernames = {}
     symmetric_keys = {}
     ciphers = {}
@@ -282,9 +271,6 @@ def main():
                     elif s not in unverified_usernames:
                         unverified_usernames[s] = msg
                         LNP.send(s, '', "NEED-CERTIFICATE")
-
-                    # elif s not in certificates:
-                    #     certificates[s] = msg
 
 
 	         #no username yet, this message is a username
