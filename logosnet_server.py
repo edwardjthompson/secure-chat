@@ -15,6 +15,11 @@ import base64
 from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
 
 
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import AES, PKCS1_OAEP, ARC4 
+from Crypto.Hash import SHA
+from Crypto.Random import get_random_bytes
+
 MAX_USR = 100
 TIMEOUT = 60
 
@@ -171,6 +176,8 @@ def main():
     usernames = {}
     certificates = {}
     unverified_usernames = {}
+    symmetric_keys = {}
+    ciphers = {}
 
     while inputs:
 
@@ -201,6 +208,16 @@ def main():
 
                 if n_users < MAX_USR:
 
+                    #ciphers[s] = None
+
+                    public_key = ''
+                    with open('rsa_public.pem', 'r') as public_key_file:
+                        public_key = public_key_file.read()
+                        public_key.replace("\n", "").replace("\r", "")
+                    LNP.send(connection, public_key) # send public key
+
+                    time.sleep(1)
+
                     LNP.send(connection, '', "ACCEPT")
 
                     #set up connnection variables
@@ -226,16 +243,35 @@ def main():
 	 ###
             else:
 
-                msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len)
+                msg_status = None
+                if s in ciphers:
+                    msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, ciphers[s])
+                else:
+                    msg_status = LNP.recv(s, msg_buffers, recv_len, msg_len, None)
 
                 if msg_status == "MSG_CMPLT":
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
+
+                    if s not in symmetric_keys:
+                        # decode symmetric key using server private key
+                        enc_session_key = base64.b64decode(msg.encode())
+                        
+                        private_key = RSA.import_key(open("rsa_private.pem").read())
+                        cipher_rsa = PKCS1_OAEP.new(private_key)
+                        symmetric_key = cipher_rsa.decrypt(enc_session_key)
+                        symmetric_keys[s] = symmetric_key
+
+                        # make cipher and store it
+                        tempkey = SHA.new(symmetric_key).digest()
+                        cipher_server = ARC4.new(tempkey)
+                        ciphers[s] = cipher_server
+
                     # if args.debug:
                     #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
 
 	         #Username exists for this client, this is a message
-                    if s in usernames:
+                    elif s in usernames:
                         pvt_user = is_private(msg, usernames)
                         msg = "> " + usernames[s] + ": " + msg
                         if pvt_user:
@@ -256,6 +292,7 @@ def main():
                         certificates[s] = msg
                         username_status = is_username(unverified_usernames[s],
                         usernames, msg)
+
                         LNP.send(s, '', username_status)
 
                         if username_status == "USERNAME-ACCEPT":
@@ -319,7 +356,7 @@ def main():
                 if next_msg:
                     # if args.debug:
                     #     print("        sending " + next_msg + " to " + str(s.getpeername()))
-                    LNP.send(s, next_msg)
+                    LNP.send(s, next_msg, None, ciphers[s])
 
 
         #Remove exceptional sockets from the server
