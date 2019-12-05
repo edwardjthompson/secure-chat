@@ -215,7 +215,7 @@ def main():
                         public_key.replace("\n", "").replace("\r", "")
                     LNP.send(connection, public_key) # send public key
 
-                    time.sleep(1)
+                    time.sleep(.005)
 
                     LNP.send(connection, '', "ACCEPT")
 
