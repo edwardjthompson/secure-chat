@@ -138,7 +138,7 @@ def main():
                         LNP.send(s, base64.b64encode(enc_symmetric_key).decode())
 
                     # Somewhere here check if private message and if so decrypt it.
-                    if username_next:
+                    elif username_next:
                         username_msg = msg
                         username = username_msg.split(' ')[1]
                         sys.stdout.write(username_msg + '\n')
