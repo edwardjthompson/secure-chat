@@ -4,9 +4,6 @@ send and recv functions implementing the chatroom protocol
 
 import struct
 import sys
-import socket
-
-from Crypto.Cipher import ARC4
 
 # Make a global cipher_server won't work because different for each
 
@@ -98,7 +95,7 @@ def recv(s, msg_buffers, recv_len, msg_len, cipher_decrypter):
     #     msg_len[s] = len(msg_buffers[s])
     #     return code
 
-    except:
+    except: # pylint: disable=W0702
         del msg_buffers[s]
         del recv_len[s]
         if s in msg_len:
