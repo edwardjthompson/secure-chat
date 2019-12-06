@@ -11,6 +11,8 @@ import queue
 import sys
 import LNP
 
+import random
+
 def get_args():
     '''
     Gets command line argumnets.
@@ -41,11 +43,15 @@ def is_private(msg):
     '''
     isPrivate returns username of recipient if the msg is private and None otherwise
     '''
+
+    # private message would look like > bob: @alice
+
     from_user = msg.split(' ')[1]
+    from_user = from_user[:len(from_user)-1] # remove : from end
     to_user = msg.split(' ')[2]
 
-    if to_user == '@':
-        user = str1[1:len(str1)]
+    if to_user[0] == '@':
+        user = to_user[1:len(to_user)]
         return from_user, user
 
     return None, None
@@ -80,7 +86,7 @@ def main():
 
     # Key will be username and value will be symmetric key
     dh_symmetric_keys = {}
-    dh_client_secret = 0
+    dh_client_secret = random.randint(0, 20)
 
     saved_messages = {}
 
@@ -105,9 +111,42 @@ def main():
                     # Check if private message
                     # If it is check if have sym key, if yes then encrypt
                     # If no then must be getting key so get it and make sym key and then send back over the line
+                    # private message would look like > bob: @alice
+                    # from_user bob to_user alice
                     from_user, to_user = is_private(msg)
                     if to_user is not None:
                         # then it is a private message
+                        # check if setup connection between these clients before
+                        if to_user != username:
+                            print("Error: Recieved private message not meant for us")
+                            exit(1)
+
+                        if from_user in dh_symmetric_keys:
+                            # then we have a symmetric key, decrypt the message
+                            print("decrypted with dh_symmetric key")
+                        else:
+                            # parse out the sent over symmetric key
+                            #> bob: @alice A
+                            A = int(msg.split(' ')[3])
+                            dh_symmetric_key = (A**dh_client_secret) % sharedPrime
+                            dh_symmetric_keys[from_user] = dh_symmetric_key
+                            print('dh_symmetric_key: ' + str(dh_symmetric_key))
+
+                            if from_user in saved_messages:
+                                # if client who is recieving now initiated private messages they will have a saved message
+                                # send this message over now that connection is established
+                                # check if saved message, if yes send that over
+
+                                # encrypt the saved message with symmetric key
+                                message_queue.put(saved_messages[from_user])
+                            else:
+                                # client who is recieving now didn't initiate and needs to send key back over to one who did
+                                # if no then generate own dh key and send it over
+                                B = (sharedBase**dh_client_secret) % sharedPrime
+                                # send this to next client
+                                msg = '@' + from_user + ' ' + str(B)
+                                message_queue.put(msg)
+
 
 
                     if username_next:
@@ -166,15 +205,14 @@ def main():
                     if str1[0] == '@': # This is private message
                         user = str1[1:len(str1)]
                         if user in dh_symmetric_keys: # We have symmetric key for user
-                            # do some decryption here
-                            print(msg.split(' ')[1:])
+                            # do some encryption here
+                            print('encrypted with dh sym key message ' + str(msg.split(' ')[1:]))
                         else:
                             # setup values and send generated over
-                            dh_client_secret = randint(0, 20)
                             A = (sharedBase ** dh_client_secret) % sharedPrime
                             saved_messages[user] = msg # save message to be send later?
                             # send this to next client
-                            msg = '@' + user + ' ' + A
+                            msg = '@' + user + ' ' + str(A)
 
                     # Check if message is private
                     # If private check if DH connection has been set up
