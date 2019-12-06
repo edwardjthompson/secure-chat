@@ -15,7 +15,7 @@ import base64
 
 from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
-from Crypto.Cipher import AES, PKCS1_OAEP, ARC4
+from Crypto.Cipher import PKCS1_OAEP, ARC4
 from Crypto.Hash import SHA
 
 def get_args():
@@ -54,7 +54,7 @@ def readCertFile(name):
     try:
         with open(cert, 'rb') as certFile:
             content = certFile.read()
-    except:
+    except: # pylint: disable=W0702
         content = b'....' #needs to be a multiple of 4 for base64 encoding
         exit(1)
 

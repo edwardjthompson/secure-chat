@@ -15,9 +15,8 @@ import base64
 from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
 
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import AES, PKCS1_OAEP, ARC4 
+from Crypto.Cipher import PKCS1_OAEP, ARC4 
 from Crypto.Hash import SHA
-from Crypto.Random import get_random_bytes
 
 MAX_USR = 100
 TIMEOUT = 60
@@ -132,7 +131,7 @@ def verifyUser(name, cert):
     try:
         verify(x509, decoded, data, 'sha256')
         return True
-    except:
+    except: # pylint: disable=W0702
         return False
 
 
