@@ -274,7 +274,6 @@ def main():
 
 	         #no username yet, this message is a username
                     else:
-                        certificates[s] = msg
                         username_status = is_username(unverified_usernames[s],
                         usernames, msg)
 
