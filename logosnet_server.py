@@ -42,7 +42,6 @@ def is_username(name, usernames, cert):
     return "USERNAME-ACCEPT"
 
 
-
 def is_private(msg, usernames):
     '''
     isPrivate returns username of recipient if the msg is private and None otherwise
