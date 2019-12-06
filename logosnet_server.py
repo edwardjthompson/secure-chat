@@ -240,6 +240,9 @@ def main():
 
                     msg = LNP.get_msg_from_queue(s, msg_buffers, recv_len, msg_len)
 
+                    if args.debug:
+                        print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
+                    
                     if s not in symmetric_keys:
                         # decode symmetric key using server private key
                         enc_session_key = base64.b64decode(msg.encode())
@@ -254,8 +257,6 @@ def main():
                         cipher_server = ARC4.new(tempkey)
                         ciphers[s] = cipher_server
 
-                    # if args.debug:
-                    #     print("        receieved " + str(msg) +	 " from " + str(s.getpeername()))
 
 	         #Username exists for this client, this is a message
                     elif s in usernames:

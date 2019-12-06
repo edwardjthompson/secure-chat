@@ -56,6 +56,7 @@ def readCertFile(name):
             content = certFile.read()
     except:
         content = b'....' #needs to be a multiple of 4 for base64 encoding
+        exit(1)
 
     encoded = base64.b64encode(content).decode()
     
