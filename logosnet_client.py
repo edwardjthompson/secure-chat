@@ -122,6 +122,8 @@ def main():
 
                 if code == "MSG_CMPLT":
 
+                    establishing = False
+
                     # Check if private message
                     # If it is check if have sym key, if yes then encrypt
                     # If no then must be getting key so get it and make sym key and then send back over the line
@@ -132,16 +134,17 @@ def main():
                         # then it is a private message
                         # check if setup connection between these clients before
                         if to_user != username:
-                            print("Error: Recieved private message not meant for us")
-                            exit(1)
+                            # ignore
+                            continue
 
-                        if from_user in dh_symmetric_keys:
+                        elif from_user in dh_symmetric_keys:
                             # then we have a symmetric key, decrypt the message
-                            print("decrypted with dh_symmetric key")
+                            # print("decrypted with dh_symmetric key")
                             decrypted_msg = decrypted_message(msg.split(' ', 3)[3], dh_symmetric_keys[from_user])
                             # print(decrypted_msg)
                             msg = '> ' + str(from_user) + ': @' + str(to_user) + ' ' + str(decrypted_msg)
                         else:
+                            establishing = True
                             # parse out the sent over symmetric key
                             #> bob: @alice A
                             A = int(msg.split(' ')[3])
@@ -155,7 +158,10 @@ def main():
                                 # check if saved message, if yes send that over
 
                                 # encrypt the saved message with symmetric key
-                                message_queue.put(saved_messages[from_user])
+                                encrypted_msg = encrypted_message(saved_messages[from_user], dh_symmetric_keys[from_user])
+                                msg = '@' + from_user + ' ' + str(encrypted_msg)
+
+                                message_queue.put(msg)
                             else:
                                 # client who is recieving now didn't initiate and needs to send key back over to one who did
                                 # if no then generate own dh key and send it over
@@ -165,25 +171,27 @@ def main():
                                 message_queue.put(msg)
 
 
-                    if username_next:
-                        username_msg = msg
-                        username = username_msg.split(' ')[1]
-                        sys.stdout.write(username_msg + '\n')
-                        sys.stdout.write("> " + username + ": ")
-                        sys.stdout.flush()
-                        username_next = False
+                    if not establishing:
 
-                    elif msg:
-		        #If username exists, add message prompt to end of message
-                        if username != '':
-                            sys.stdout.write('\r' + msg + '\n')
+                        if username_next:
+                            username_msg = msg
+                            username = username_msg.split(' ')[1]
+                            sys.stdout.write(username_msg + '\n')
                             sys.stdout.write("> " + username + ": ")
+                            sys.stdout.flush()
+                            username_next = False
 
-                        #If username doesnt exist, just write message
-                        else:
-                            sys.stdout.write(msg)
+                        elif msg:
+                    #If username exists, add message prompt to end of message
+                            if username != '':
+                                sys.stdout.write('\r' + msg + '\n')
+                                sys.stdout.write("> " + username + ": ")
 
-                        sys.stdout.flush()
+                            #If username doesnt exist, just write message
+                            else:
+                                sys.stdout.write(msg)
+
+                            sys.stdout.flush()
 
                 elif code == "ACCEPT":
                     waiting_accept = False
@@ -224,11 +232,11 @@ def main():
                             msg = msg.split(' ', 1)[1]
                             encrypted_msg = encrypted_message(msg, dh_symmetric_keys[user])
                             # print(encrypted_msg)
-                            msg = encrypted_msg
+                            msg = '@' + user + ' ' + str(encrypted_msg)
                         else:
                             # setup values and send generated over
                             A = (sharedBase ** dh_client_secret) % sharedPrime
-                            saved_messages[user] = msg # save message to be send later?
+                            saved_messages[user] = msg.split(' ', 1)[1] # save message to be send later?
                             # send this to next client
                             msg = '@' + user + ' ' + str(A)
 
