@@ -14,7 +14,6 @@ import LNP
 import base64
 from OpenSSL.crypto import load_publickey, FILETYPE_PEM, verify, X509
 
-
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import AES, PKCS1_OAEP, ARC4 
 from Crypto.Hash import SHA
@@ -205,7 +204,7 @@ def main():
                         public_key.replace("\n", "").replace("\r", "")
                     LNP.send(connection, public_key) # send public key
 
-                    time.sleep(1)
+                    time.sleep(.005)
 
                     LNP.send(connection, '', "ACCEPT")
 
