@@ -56,6 +56,20 @@ def is_private(msg):
 
     return None, None
 
+def encrypted_message(msg, symmetric_key):
+    encrypted_message = ''
+    for c in msg:
+        encrypted_message += chr(ord(c)+symmetric_key)
+
+    return encrypted_message
+
+def decrypted_message(msg, symmetric_key):
+    decrypted_message = ''
+    for c in msg:
+        decrypted_message += chr(ord(c)-symmetric_key)
+
+    return decrypted_message
+
 #Main method
 def main():
     '''
@@ -111,7 +125,7 @@ def main():
                     # Check if private message
                     # If it is check if have sym key, if yes then encrypt
                     # If no then must be getting key so get it and make sym key and then send back over the line
-                    # private message would look like > bob: @alice
+                    # private message would look like > bob: @alice themessageee
                     # from_user bob to_user alice
                     from_user, to_user = is_private(msg)
                     if to_user is not None:
@@ -124,13 +138,16 @@ def main():
                         if from_user in dh_symmetric_keys:
                             # then we have a symmetric key, decrypt the message
                             print("decrypted with dh_symmetric key")
+                            decrypted_msg = decrypted_message(msg.split(' ', 3)[3], dh_symmetric_keys[from_user])
+                            # print(decrypted_msg)
+                            msg = '> ' + str(from_user) + ': @' + str(to_user) + ' ' + str(decrypted_msg)
                         else:
                             # parse out the sent over symmetric key
                             #> bob: @alice A
                             A = int(msg.split(' ')[3])
                             dh_symmetric_key = (A**dh_client_secret) % sharedPrime
                             dh_symmetric_keys[from_user] = dh_symmetric_key
-                            print('dh_symmetric_key: ' + str(dh_symmetric_key))
+                            # print('dh_symmetric_key: ' + str(dh_symmetric_key))
 
                             if from_user in saved_messages:
                                 # if client who is recieving now initiated private messages they will have a saved message
@@ -146,7 +163,6 @@ def main():
                                 # send this to next client
                                 msg = '@' + from_user + ' ' + str(B)
                                 message_queue.put(msg)
-
 
 
                     if username_next:
@@ -198,15 +214,17 @@ def main():
                 if not waiting_accept:
 
                     msg = msg.rstrip()
-
-                    print(msg)
                     
                     str1 = msg.split(' ')[0]
                     if str1[0] == '@': # This is private message
                         user = str1[1:len(str1)]
                         if user in dh_symmetric_keys: # We have symmetric key for user
                             # do some encryption here
-                            print('encrypted with dh sym key message ' + str(msg.split(' ')[1:]))
+                            # print('before encrypted with dh sym key message ' + str(msg.split(' ', 1)[1]))
+                            msg = msg.split(' ', 1)[1]
+                            encrypted_msg = encrypted_message(msg, dh_symmetric_keys[user])
+                            # print(encrypted_msg)
+                            msg = encrypted_msg
                         else:
                             # setup values and send generated over
                             A = (sharedBase ** dh_client_secret) % sharedPrime
