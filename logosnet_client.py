@@ -224,7 +224,7 @@ def main():
                     msg = msg.rstrip()
                     
                     str1 = msg.split(' ')[0]
-                    if str1[0] == '@': # This is private message
+                    if len(str1) > 0 and str1[0] == '@': # This is private message
                         user = str1[1:len(str1)]
                         if user in dh_symmetric_keys: # We have symmetric key for user
                             # do some encryption here
