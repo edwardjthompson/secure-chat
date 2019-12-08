@@ -80,14 +80,18 @@ def is_private(msg):
 
 def encrypted_message(msg, symmetric_key):
     encrypted_message = ''
+    # print()
     for c in msg:
+        # print(c)
         encrypted_message += chr(ord(c)+symmetric_key)
 
     return encrypted_message
 
 def decrypted_message(msg, symmetric_key):
     decrypted_message = ''
+    # print()
     for c in msg:
+        # print(c)
         decrypted_message += chr(ord(c)-symmetric_key)
 
     return decrypted_message
@@ -155,7 +159,7 @@ def main():
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
-                    print(code)
+                    # print(code)
 
                 if code == "MSG_CMPLT":
 
@@ -207,6 +211,11 @@ def main():
                             decrypted_msg = decrypted_message(msg.split(' ', 3)[3], dh_symmetric_keys[from_user])
                             # print(decrypted_msg)
                             msg = '> ' + str(from_user) + ': @' + str(to_user) + ' ' + str(decrypted_msg)
+                            sys.stdout.write('\r' + msg + '\n')
+                            sys.stdout.write("> " + username + ": ")
+                            sys.stdout.flush()
+                            # message_queue.put(msg)
+                            # print(msg)
                         else:
                             establishing = True
                             # parse out the sent over symmetric key
