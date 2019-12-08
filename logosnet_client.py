@@ -17,6 +17,7 @@ from Crypto.PublicKey import RSA
 from Crypto.Random import get_random_bytes
 from Crypto.Cipher import PKCS1_OAEP, ARC4
 from Crypto.Hash import SHA
+import random
 
 def get_args():
     '''
@@ -61,6 +62,36 @@ def readCertFile(name):
     encoded = base64.b64encode(content).decode()
     
     return encoded
+def is_private(msg):
+    '''
+    isPrivate returns username of recipient if the msg is private and None otherwise
+    '''
+
+    # private message would look like > bob: @alice
+
+    from_user = msg.split(' ')[1]
+    from_user = from_user[:len(from_user)-1] # remove : from end
+    to_user = msg.split(' ')[2]
+
+    if to_user[0] == '@':
+        user = to_user[1:len(to_user)]
+        return from_user, user
+
+    return None, None
+
+def encrypted_message(msg, symmetric_key):
+    encrypted_message = ''
+    for c in msg:
+        encrypted_message += chr(ord(c)+symmetric_key)
+
+    return encrypted_message
+
+def decrypted_message(msg, symmetric_key):
+    decrypted_message = ''
+    for c in msg:
+        decrypted_message += chr(ord(c)-symmetric_key)
+
+    return decrypted_message
 
 #Main method
 def main():
@@ -94,6 +125,15 @@ def main():
 
     symmetric_key = ''
     cipher = None
+
+    sharedPrime = 23    # p
+    sharedBase = 5      # g
+
+    # Key will be username and value will be symmetric key
+    dh_symmetric_keys = {}
+    dh_client_secret = random.randint(0, 20)
+
+    saved_messages = {}
 
     while server in inputs:
 
@@ -138,26 +178,90 @@ def main():
                         #Now symmetric key is set
                         LNP.send(s, base64.b64encode(enc_symmetric_key).decode())
 
-                    # Somewhere here check if private message and if so decrypt it.
-                    elif username_next:
-                        username_msg = msg
-                        username = username_msg.split(' ')[1]
-                        sys.stdout.write(username_msg + '\n')
-                        sys.stdout.write("> " + username + ": ")
-                        sys.stdout.flush()
-                        username_next = False
+                    if msg.split(' ')[0] == "User" and msg.split(' ')[3] == "left":
+                        # Removes sym_keys when the other user closes so when they rejoin
+                        # a new set of keys is created
+                        user_to_remove = msg.split(' ')[1]
+                        del dh_symmetric_keys[user_to_remove]
 
-                    elif msg:
-		        #If username exists, add message prompt to end of message
-                        if username != '':
-                            sys.stdout.write('\r' + msg + '\n')
-                            sys.stdout.write("> " + username + ": ")
+                    establishing = False
 
-                        #If username doesnt exist, just write message
+                    # Check if private message
+                    # If it is check if have sym key, if yes then encrypt
+                    # If no then must be getting key so get it and make sym key and then send back over the line
+                    # private message would look like > bob: @alice themessageee
+                    # from_user bob to_user alice
+                    from_user, to_user = is_private(msg)
+                    if to_user is not None:
+                        # then it is a private message
+                        # check if setup connection between these clients before
+                        if to_user != username:
+                            # ignore
+                            continue
+
+                        elif from_user in dh_symmetric_keys:
+                            # then we have a symmetric key, decrypt the message
+                            # print("decrypted with dh_symmetric key")
+                            decrypted_msg = decrypted_message(msg.split(' ', 3)[3], dh_symmetric_keys[from_user])
+                            # print(decrypted_msg)
+                            msg = '> ' + str(from_user) + ': @' + str(to_user) + ' ' + str(decrypted_msg)
                         else:
-                            sys.stdout.write(msg)
+                            establishing = True
+                            # parse out the sent over symmetric key
+                            #> bob: @alice A
+                            A = int(msg.split(' ')[3])
+                            dh_symmetric_key = (A**dh_client_secret) % sharedPrime
+                            dh_symmetric_keys[from_user] = dh_symmetric_key
+                            # print('dh_symmetric_key: ' + str(dh_symmetric_key))
 
-                        sys.stdout.flush()
+                            if from_user in saved_messages:
+                                # if client who is recieving now initiated private messages they will have a saved message
+                                # send this message over now that connection is established
+                                # check if saved message, if yes send that over
+
+                                # encrypt the saved message with symmetric key
+                                encrypted_msg = encrypted_message(saved_messages[from_user], dh_symmetric_keys[from_user])
+                                msg = '@' + from_user + ' ' + str(encrypted_msg)
+
+                                message_queue.put(msg)
+                            else:
+                                # client who is recieving now didn't initiate and needs to send key back over to one who did
+                                # if no then generate own dh key and send it over
+                                B = (sharedBase**dh_client_secret) % sharedPrime
+                                # send this to next client
+                                msg = '@' + from_user + ' ' + str(B)
+                                message_queue.put(msg)
+
+                    elif not establishing:
+
+                        # Somewhere here check if private message and if so decrypt it.
+                        if username_next:
+                            username_msg = msg
+                            username = username_msg.split(' ')[1]
+                            sys.stdout.write(username_msg + '\n')
+                            sys.stdout.write("> " + username + ": ")
+                            sys.stdout.flush()
+                            username_next = False
+
+                        elif msg:
+                    #If username exists, add message prompt to end of message
+                            if username != '':
+                                sys.stdout.write('\r' + msg + '\n')
+                                sys.stdout.write("> " + username + ": ")
+                                sys.stdout.flush()
+                                username_next = False
+
+                            elif msg:
+                        #If username exists, add message prompt to end of message
+                                if username != '':
+                                    sys.stdout.write('\r' + msg + '\n')
+                                    sys.stdout.write("> " + username + ": ")
+
+                                #If username doesnt exist, just write message
+                                else:
+                                    sys.stdout.write(msg)
+
+                                sys.stdout.flush()
 
                 elif code == "ACCEPT":
                     waiting_accept = False
@@ -203,7 +307,31 @@ def main():
                     sys.stdout.flush()
 
                 if not waiting_accept:
+
                     msg = msg.rstrip()
+                    
+                    str1 = msg.split(' ')[0]
+                    if len(str1) > 0 and str1[0] == '@': # This is private message
+                        user = str1[1:len(str1)]
+                        if user in dh_symmetric_keys: # We have symmetric key for user
+                            # do some encryption here
+                            # print('before encrypted with dh sym key message ' + str(msg.split(' ', 1)[1]))
+                            msg = msg.split(' ', 1)[1]
+                            encrypted_msg = encrypted_message(msg, dh_symmetric_keys[user])
+                            # print(encrypted_msg)
+                            msg = '@' + user + ' ' + str(encrypted_msg)
+                        else:
+                            # setup values and send generated over
+                            A = (sharedBase ** dh_client_secret) % sharedPrime
+                            saved_messages[user] = msg.split(' ', 1)[1] # save message to be send later?
+                            # send this to next client
+                            msg = '@' + user + ' ' + str(A)
+
+                    # Check if message is private
+                    # If private check if DH connection has been set up
+                    # If yes then encrypt using symmetric key and send over
+                    # If no then make secret, send value over, save value and message and wait for key to come back so we can encrypt msg and send off
+                    
                     if msg:
                         message_queue.put(msg)
                     if not ((username == '') or (msg == "exit()")):
