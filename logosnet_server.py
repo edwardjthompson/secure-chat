@@ -212,16 +212,16 @@ def main():
                     n_users += 1
                     user_connect_time[connection] = time.time()
 
-                    # if args.debug:
-                    #     print("        SERVER: new connection from " + str(client_addr))
+                    if args.debug:
+                        print("        SERVER: new connection from " + str(client_addr))
 
                 else: #>100 users
                     LNP.send(connection, '', "FULL")
                     connection.close()
 
-                    # if args.debug:
-                    #     print("        SERVER: connection from " +
-                    #           str(client_addr) + " refused, server full")
+                    if args.debug:
+                        print("        SERVER: connection from " +
+                              str(client_addr) + " refused, server full")
 
 
 	 ###
@@ -297,9 +297,9 @@ def main():
 	        ###
                 elif msg_status == "NO_MSG" or msg_status == "EXIT":
 
-                    # if args.debug:
-                    #     print("        SERVER: " + msg_status +
-                    #           ": closing connection with " + str(s.getpeername()))
+                    if args.debug:
+                        print("        SERVER: " + msg_status +
+                              ": closing connection with " + str(s.getpeername()))
 
                     outputs.remove(s)
                     inputs.remove(s)
@@ -337,16 +337,16 @@ def main():
                     next_msg = None
 
                 if next_msg:
-                    # if args.debug:
-                    #     print("        sending " + next_msg + " to " + str(s.getpeername()))
+                    if args.debug:
+                        print("        sending " + next_msg + " to " + str(s.getpeername()))
                     LNP.send(s, next_msg, None, ciphers[s])
 
 
         #Remove exceptional sockets from the server
         for s in exceptional:
 
-            # if args.debug:
-            #     print("        SERVER: handling exceptional condition for " + str(s.getpeername()))
+            if args.debug:
+                print("        SERVER: handling exceptional condition for " + str(s.getpeername()))
 
             inputs.remove(s)
 	 #if s in outputs:

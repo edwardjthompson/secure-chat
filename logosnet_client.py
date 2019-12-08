@@ -56,7 +56,6 @@ def readCertFile(name):
         with open(cert, 'rb') as certFile:
             content = certFile.read()
     except: # pylint: disable=W0702
-        content = b'....' #needs to be a multiple of 4 for base64 encoding
         exit(1)
 
     encoded = base64.b64encode(content).decode()
@@ -125,6 +124,7 @@ def main():
 
     symmetric_key = ''
     cipher = None
+    do_not_send_msg = False
 
     sharedPrime = 23    # p
     sharedBase = 5      # g
@@ -155,11 +155,13 @@ def main():
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
+                    print(code)
 
                 if code == "MSG_CMPLT":
 
                     if symmetric_key == '':
                         public_key = msg
+                        do_not_send_msg = True
                         # Save public key into client .pem file
                         client_public_key_file = open("client_rsa_public.pem", "w")
                         client_public_key_file.write(public_key)
@@ -248,20 +250,14 @@ def main():
                             if username != '':
                                 sys.stdout.write('\r' + msg + '\n')
                                 sys.stdout.write("> " + username + ": ")
-                                sys.stdout.flush()
-                                username_next = False
+                                
 
-                            elif msg:
-                        #If username exists, add message prompt to end of message
-                                if username != '':
-                                    sys.stdout.write('\r' + msg + '\n')
-                                    sys.stdout.write("> " + username + ": ")
+                        
+                            #If username doesnt exist, just write message
+                            else:
+                                sys.stdout.write(msg)
 
-                                #If username doesnt exist, just write message
-                                else:
-                                    sys.stdout.write(msg)
-
-                                sys.stdout.flush()
+                            sys.stdout.flush()
 
                 elif code == "ACCEPT":
                     waiting_accept = False
