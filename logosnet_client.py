@@ -59,8 +59,8 @@ def readCertFile(name):
         exit(1)
 
     encoded = base64.b64encode(content).decode()
-    
     return encoded
+
 def is_private(msg):
     '''
     isPrivate returns username of recipient if the msg is private and None otherwise
@@ -194,7 +194,8 @@ def main():
 
                     # Check if private message
                     # If it is check if have sym key, if yes then encrypt
-                    # If no then must be getting key so get it and make sym key and then send back over the line
+                    # If no then must be getting key so get it and make sym key 
+                    # and then send back over the line
                     # private message would look like > bob: @alice themessageee
                     # from_user bob to_user alice
                     from_user, to_user = is_private(msg)
@@ -208,7 +209,8 @@ def main():
                         elif from_user in dh_symmetric_keys:
                             # then we have a symmetric key, decrypt the message
                             # print("decrypted with dh_symmetric key")
-                            decrypted_msg = decrypted_message(msg.split(' ', 3)[3], dh_symmetric_keys[from_user])
+                            decrypted_msg = decrypted_message(msg.split(' ', 3)[3], 
+                            dh_symmetric_keys[from_user])
                             # print(decrypted_msg)
                             msg = '> ' + str(from_user) + ': @' + str(to_user) + ' ' + str(decrypted_msg)
                             sys.stdout.write('\r' + msg + '\n')

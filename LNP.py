@@ -64,7 +64,6 @@ def send(s, msg, code=None, cipher=None):
             for byt in packed_msg:
                 repacked_msg += cipher.encrypt(bytes([byt]))
             packed_msg = repacked_msg
-        
         s.send(packed_msg)
 
 
@@ -85,7 +84,7 @@ def recv(s, msg_buffers, recv_len, msg_len, cipher_decrypter):
         if cipher_decrypter: # make sure none doesn't pass this maybe check cipher_decrypted != None
             decrypted_msg = b''
             for byt in msg:
-                decrypted_msg += cipher_decrypter.decrypt(bytes([byt])) # then return cipher decrypter??
+                decrypted_msg += cipher_decrypter.decrypt(bytes([byt])) 
             msg = decrypted_msg
 
 
