@@ -76,8 +76,8 @@ def recv(socket, msg_buffers, recv_len, msg_len, cipher_decrypter):
 
     #initialize the msg buffer and recv_len if they dont exist
     if socket not in msg_buffers:
-        msg_buffers[s] = b''
-        recv_len[s] = 0
+        msg_buffers[socket] = b''
+        recv_len[socket] = 0
 
     try:
         msg = socket.recv(2)
@@ -103,8 +103,8 @@ def recv(socket, msg_buffers, recv_len, msg_len, cipher_decrypter):
 
     if not msg:
         msg, code = LNP_code(-7)
-        msg_buffers[s] = msg.encode('UTF-8')
-        msg_len[s] = len(msg_buffers[socket])
+        msg_buffers[socket] = msg.encode('UTF-8')
+        msg_len[socket] = len(msg_buffers[socket])
         return code
 
     msg_buffers[socket] += msg
@@ -118,13 +118,13 @@ def recv(socket, msg_buffers, recv_len, msg_len, cipher_decrypter):
         #Special codes are sent as negative numbers in the length field
         if length < 0:
             msg, code = LNP_code(length)
-            msg_buffers[s] = msg.encode('UTF-8')
-            msg_len[s] = len(msg_buffers[socket])
+            msg_buffers[socket] = msg.encode('UTF-8')
+            msg_len[socket] = len(msg_buffers[socket])
             return code
 
-        msg_buffers[s] = b''
-        recv_len[s] = 0
-        msg_len[s] = length
+        msg_buffers[socket] = b''
+        recv_len[socket] = 0
+        msg_len[socket] = length
 
     #if msg done buffering
     elif (socket in msg_len) and (recv_len[socket] >= msg_len[socket]):
