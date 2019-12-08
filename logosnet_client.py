@@ -122,6 +122,12 @@ def main():
 
                 if code == "MSG_CMPLT":
 
+                    if msg.split(' ')[0] == "User" and msg.split(' ')[3] == "left":
+                        # Removes sym_keys when the other user closes so when they rejoin
+                        # a new set of keys is created
+                        user_to_remove = msg.split(' ')[1]
+                        del dh_symmetric_keys[user_to_remove]
+
                     establishing = False
 
                     # Check if private message
