@@ -210,7 +210,8 @@ def main():
                             # then we have a symmetric key, decrypt the message
                             # print("decrypted with dh_symmetric key")
                             decrypted_msg = (decrypted_message(msg.split(' ', 3)[3],
-                            dh_symmetric_keys[from_user]))
+                                             dh_symmetric_keys[from_user])
+                                            )
                             # print(decrypted_msg)
                             msg = ('> ' + str(from_user) + ': @' + str(to_user) + ' ' + 
                             str(decrypted_msg))
@@ -229,19 +230,19 @@ def main():
                             # print('dh_symmetric_key: ' + str(dh_symmetric_key))
 
                             if from_user in saved_messages:
-                                # if client who is recieving now initiated private messages 
+                                # if client who is recieving now initiated private messages
                                 # they will have a saved message
                                 # send this message over now that connection is established
                                 # check if saved message, if yes send that over
-
                                 # encrypt the saved message with symmetric key
-                                encrypted_msg = (encrypted_message(saved_messages[from_user], 
-                                dh_symmetric_keys[from_user]))
+                                encrypted_msg = (encrypted_message(saved_messages[from_user],
+                                                 dh_symmetric_keys[from_user])
+                                                )
                                 msg = '@' + from_user + ' ' + str(encrypted_msg)
 
                                 message_queue.put(msg)
                             else:
-                                # client who is recieving now didn't initiate and needs 
+                                # client who is recieving now didn't initiate and needs
                                 # to send key back over to one who did
                                 # if no then generate own dh key and send it over
                                 B = (sharedBase**dh_client_secret) % sharedPrime
@@ -265,7 +266,7 @@ def main():
                             if username != '':
                                 sys.stdout.write('\r' + msg + '\n')
                                 sys.stdout.write("> " + username + ": ")
-                                
+
                             #If username doesnt exist, just write message
                             else:
                                 sys.stdout.write(msg)
