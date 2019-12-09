@@ -83,10 +83,8 @@ def encrypt_message(msg, symmetric_key):
     Encrypts for private messages
     '''
     encrypted_message = ''
-    # print()
-    for c in msg:
-        # print(c)
-        encrypted_message += chr(ord(c)+symmetric_key)
+    for char in msg:
+        encrypted_message += chr(ord(char)+symmetric_key)
 
     return encrypted_message
 
@@ -95,10 +93,8 @@ def decrypt_message(msg, symmetric_key):
     Decrypts for private messages
     '''
     decrypted_message = ''
-    # print()
-    for c in msg:
-        # print(c)
-        decrypted_message += chr(ord(c)-symmetric_key)
+    for char in msg:
+        decrypted_message += chr(ord(char)-symmetric_key)
 
     return decrypted_message
 
@@ -136,8 +132,8 @@ def main():
     cipher = None
     do_not_send_msg = False
 
-    sharedPrime = 23    # p
-    sharedBase = 5      # g
+    shared_prime = 23    # p
+    shared_base = 5      # g
 
     # Key will be username and value will be symmetric key
     dh_symmetric_keys = {}
@@ -165,7 +161,6 @@ def main():
 
                 if code != "LOADING_MSG":
                     msg = LNP.get_msg_from_queue(s, msg_buffer, recv_len, msg_len)
-                    # print(code)
 
                 if code == "MSG_CMPLT":
 
@@ -224,16 +219,13 @@ def main():
                             sys.stdout.write('\r' + msg + '\n')
                             sys.stdout.write("> " + username + ": ")
                             sys.stdout.flush()
-                            # message_queue.put(msg)
-                            # print(msg)
                         else:
                             establishing = True
                             # parse out the sent over symmetric key
                             #> bob: @alice A
                             A = int(msg.split(' ')[3])
-                            dh_symmetric_key = (A**dh_client_secret) % sharedPrime
+                            dh_symmetric_key = (A**dh_client_secret) % shared_prime
                             dh_symmetric_keys[from_user] = dh_symmetric_key
-                            # print('dh_symmetric_key: ' + str(dh_symmetric_key))
 
                             if from_user in saved_messages:
                                 # if client who is recieving now initiated private messages
@@ -251,7 +243,7 @@ def main():
                                 # client who is recieving now didn't initiate and needs
                                 # to send key back over to one who did
                                 # if no then generate own dh key and send it over
-                                B = (sharedBase**dh_client_secret) % sharedPrime
+                                B = (shared_base**dh_client_secret) % shared_prime
                                 # send this to next client
                                 msg = '@' + from_user + ' ' + str(B)
                                 message_queue.put(msg)
@@ -333,11 +325,10 @@ def main():
                             # do some encryption here
                             msg = msg.split(' ', 1)[1]
                             encrypted_msg = encrypt_message(msg, dh_symmetric_keys[user])
-                            # print(encrypted_msg)
                             msg = '@' + user + ' ' + str(encrypted_msg)
                         else:
                             # setup values and send generated over
-                            A = (sharedBase ** dh_client_secret) % sharedPrime
+                            A = (shared_base ** dh_client_secret) % shared_prime
                             saved_messages[user] = msg.split(' ', 1)[1]
                             # send this to next client
                             msg = '@' + user + ' ' + str(A)

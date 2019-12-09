@@ -297,9 +297,9 @@ def main():
 	        ###
                 elif msg_status == "NO_MSG" or msg_status == "EXIT":
 
-                    if args.debug:
-                        print("        SERVER: " + msg_status +
-                              ": closing connection with " + str(s.getpeername()))
+                    # if args.debug:
+                    #     print("        SERVER: " + msg_status +
+                    #           ": closing connection with " + str(s.getpeername()))
 
                     outputs.remove(s)
                     inputs.remove(s)
