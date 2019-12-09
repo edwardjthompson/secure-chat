@@ -210,11 +210,11 @@ def main():
                             # then we have a symmetric key, decrypt the message
                             # print("decrypted with dh_symmetric key")
                             decrypted_msg = (decrypted_message(msg.split(' ', 3)[3],
-                                             dh_symmetric_keys[from_user])
+                                                               dh_symmetric_keys[from_user])
                                             )
                             # print(decrypted_msg)
-                            msg = ('> ' + str(from_user) + ': @' + str(to_user) + ' ' + 
-                            str(decrypted_msg))
+                            msg = ('> ' + str(from_user) + ': @' + str(to_user) + ' ' +
+                                   str(decrypted_msg))
                             sys.stdout.write('\r' + msg + '\n')
                             sys.stdout.write("> " + username + ": ")
                             sys.stdout.flush()
@@ -236,7 +236,7 @@ def main():
                                 # check if saved message, if yes send that over
                                 # encrypt the saved message with symmetric key
                                 encrypted_msg = (encrypted_message(saved_messages[from_user],
-                                                 dh_symmetric_keys[from_user])
+                                                                   dh_symmetric_keys[from_user])
                                                 )
                                 msg = '@' + from_user + ' ' + str(encrypted_msg)
 
