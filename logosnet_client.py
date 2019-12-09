@@ -45,7 +45,7 @@ def get_args():
 
     return parser.parse_args()
 
-def readCertFile(name):
+def read_cert_file(name):
     '''
     Attempts to read the users .cert file and encodes it for sending
     Sends empty binary if the file does not exist
@@ -53,8 +53,8 @@ def readCertFile(name):
     name = name.strip('\n')
     cert = name + ".cert"
     try:
-        with open(cert, 'rb') as certFile:
-            content = certFile.read()
+        with open(cert, 'rb') as cert_file:
+            content = cert_file.read()
     except: # pylint: disable=W0702
         exit(1)
 
@@ -78,7 +78,10 @@ def is_private(msg):
 
     return None, None
 
-def encrypted_message(msg, symmetric_key):
+def encrypt_message(msg, symmetric_key):
+    '''
+    Encrypts for private messages
+    '''
     encrypted_message = ''
     # print()
     for c in msg:
@@ -87,7 +90,10 @@ def encrypted_message(msg, symmetric_key):
 
     return encrypted_message
 
-def decrypted_message(msg, symmetric_key):
+def decrypt_message(msg, symmetric_key):
+    '''
+    Decrypts for private messages
+    '''
     decrypted_message = ''
     # print()
     for c in msg:
@@ -209,8 +215,8 @@ def main():
                         elif from_user in dh_symmetric_keys:
                             # then we have a symmetric key, decrypt the message
                             # print("decrypted with dh_symmetric key")
-                            decrypted_msg = (decrypted_message(msg.split(' ', 3)[3],
-                                                               dh_symmetric_keys[from_user])
+                            decrypted_msg = (decrypt_message(msg.split(' ', 3)[3],
+                                                             dh_symmetric_keys[from_user])
                                             )
                             # print(decrypted_msg)
                             msg = ('> ' + str(from_user) + ': @' + str(to_user) + ' ' +
@@ -235,8 +241,8 @@ def main():
                                 # send this message over now that connection is established
                                 # check if saved message, if yes send that over
                                 # encrypt the saved message with symmetric key
-                                encrypted_msg = (encrypted_message(saved_messages[from_user],
-                                                                   dh_symmetric_keys[from_user])
+                                encrypted_msg = (encrypt_message(saved_messages[from_user],
+                                                                 dh_symmetric_keys[from_user])
                                                 )
                                 msg = '@' + from_user + ' ' + str(encrypted_msg)
 
@@ -278,9 +284,9 @@ def main():
                     sys.stdout.write(msg)
                     sys.stdout.flush()
                     need_to_sign = True
-                
+
                 elif code == "NEED-CERTIFICATE":
-                    cert = readCertFile(unverified_username)
+                    cert = read_cert_file(unverified_username)
                     message_queue.put(cert)
 
                 elif code == "USERNAME-INVALID" or code == "USERNAME-TAKEN":
@@ -319,29 +325,29 @@ def main():
                 if not waiting_accept:
 
                     msg = msg.rstrip()
-                    
+
                     str1 = msg.split(' ')[0]
                     if len(str1) > 0 and str1[0] == '@': # This is private message
                         user = str1[1:len(str1)]
                         if user in dh_symmetric_keys: # We have symmetric key for user
                             # do some encryption here
                             msg = msg.split(' ', 1)[1]
-                            encrypted_msg = encrypted_message(msg, dh_symmetric_keys[user])
+                            encrypted_msg = encrypt_message(msg, dh_symmetric_keys[user])
                             # print(encrypted_msg)
                             msg = '@' + user + ' ' + str(encrypted_msg)
                         else:
                             # setup values and send generated over
                             A = (sharedBase ** dh_client_secret) % sharedPrime
-                            saved_messages[user] = msg.split(' ', 1)[1] # save message to be send later?
+                            saved_messages[user] = msg.split(' ', 1)[1]
                             # send this to next client
                             msg = '@' + user + ' ' + str(A)
 
                     # Check if message is private
                     # If private check if DH connection has been set up
                     # If yes then encrypt using symmetric key and send over
-                    # If no then make secret, send value over, save value and message 
+                    # If no then make secret, send value over, save value and message
                     # and wait for key to come back so we can encrypt msg and send off
-                    
+
                     if msg:
                         message_queue.put(msg)
                     if not ((username == '') or (msg == "exit()")):
